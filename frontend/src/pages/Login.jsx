@@ -41,8 +41,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[url('./BG-Branch.jpg')] bg-cover bg-center p-4">
-      
+    <div
+      className="min-h-screen flex items-center justify-center bg-cover bg-center p-4"
+      style={{ backgroundImage: "url('/BG-Branch.jpg')" }}
+    >
       <div className="bg-white  rounded-xl overflow-hidden shadow-xl w-full max-w-md border border-gray-100 transform transition-all duration-300 hover:shadow-xl">
         <div className="flex justify-center items-center h-20 bg-gradient-to-r from-orange-600 to-orange-500">
           <h2 className="text-3xl font-bold text-center text-white ">
