@@ -21,6 +21,7 @@ const SaleForm = ({
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billData, setBillData] = useState(null);
+  
 
   useEffect(() => {
     if (success) {
@@ -87,7 +88,7 @@ const SaleForm = ({
         Sale Details
       </h3>
 
-      {success && <Notification message={success} type="success" />}
+      {/* {success && <Notification message={success} type="success" />} */}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Member Information */}

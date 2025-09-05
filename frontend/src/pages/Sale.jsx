@@ -82,8 +82,8 @@ const Sale = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-10/12 mx-auto">
-        {/* {error && <Notification message={error} type="error" />} */}
-        {loading && <LoadingSpinner />}
+        {/* {loading && <LoadingSpinner />} */}
+
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-1/2">
             <ProductSelection
@@ -106,6 +106,7 @@ const Sale = () => {
             />
           </div>
         </div>
+
       </div>
     </div>
   );
