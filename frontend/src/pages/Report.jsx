@@ -124,21 +124,23 @@ const Report = () => {
         {error && <Notification message={error} type="error" />}
         {success && <Notification message={success} type="success" />}
         {/* {loading && <LoadingSpinner />} */}
-        <div className="flex mb-6">
+        <div className="flex">
           <button
             onClick={() => setActiveTab("all-bills")}
-            className={`px-4 py-2 mr-2 rounded ${
+            className={`px-4 py-2 mr-1 rounded-tl-lg ${
               activeTab === "all-bills"
-                ? "bg-primary text-white"
-                : "bg-gray-200"
+                ? "bg-primary text-white font-semibold"
+                : "bg-gray-200 hover:border-orange-300 text-gray-700 hover:bg-orange-200 cursor-pointer transition-colors"
             }`}
           >
             All Sale Bill Report
           </button>
           <button
             onClick={() => setActiveTab("summary")}
-            className={`px-4 py-2 rounded ${
-              activeTab === "summary" ? "bg-primary text-white" : "bg-gray-200"
+            className={`px-4 py-2 rounded-tr-lg ${
+              activeTab === "summary"
+                ? "bg-primary text-white font-semibold"
+                : "bg-gray-200 hover:border-orange-300 text-gray-700 hover:bg-orange-200 cursor-pointer transition-colors"
             }`}
           >
             Sale Summary Report

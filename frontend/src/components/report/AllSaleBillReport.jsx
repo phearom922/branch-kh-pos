@@ -220,7 +220,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
           <button
             onClick={handleExportExcel}
             disabled={!hasBills}
-            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center"
+            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium flex items-center"
           >
             {isGlobalLoading ? (
               <>
@@ -253,7 +253,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
           <button
             onClick={handleExportExcelDetail}
             disabled={!hasBills}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
           >
             Export to Excel Detail
           </button>
@@ -281,7 +281,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
               ].map((header) => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500 tracking-wider"
                 >
                   {header}
                 </th>
@@ -317,7 +317,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                     <p className="text-gray-600 font-medium">
                       Loading bills data...
                     </p>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <p className="text-gray-400 text-xs mt-1">
                       Please wait while we fetch your records
                     </p>
                   </div>
@@ -357,28 +357,28 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                   key={bill._id || index}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                 >
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 font-medium">
                     {bill.billNumber}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {new Date(bill.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.memberId || "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.memberName || "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.purchaseType}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.totalPV}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.totalPrice.toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         bill.billStatus === "Canceled"
@@ -389,21 +389,21 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                       {bill.billStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.branchCode}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.recordBy}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.cancelBy || "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.canceledDate
                       ? new Date(bill.canceledDate).toLocaleString()
                       : "-"}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleViewPDF(bill)}

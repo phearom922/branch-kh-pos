@@ -94,10 +94,10 @@ const ReportFilter = ({ onFilter, branches, user }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <form className="flex flex-col gap-4">
+    <div className="bg-white rounded-tr-lg rounded-br-lg rounded-bl-lg shadow-md p-6 mb-6 ">
+      <form className="flex flex-col gap-2">
         {/* แถวบน */}
-        <div className="flex flex-row flex-wrap gap-4 items-center">
+        <div className="flex flex-row flex-wrap gap-2 items-center">
           {/* Start Date */}
           <div className="relative min-w-[140px]">
             <DatePicker
@@ -105,7 +105,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
               onChange={(date) => setStartDate(date)}
               dateFormat="dd/MM/yyyy"
               placeholderText="Select Start Date"
-              className="border rounded px-3 py-2 w-full"
+              className="border border-gray-300 px-3 py-1 rounded-md  w-full"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500">
               <svg
@@ -125,7 +125,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
               onChange={(date) => setEndDate(date)}
               dateFormat="dd/MM/yyyy"
               placeholderText="Select End Date"
-              className="border rounded px-3 py-2 w-full"
+              className="border border-gray-300 px-3 py-1 rounded-md w-full"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500">
               <svg
@@ -143,7 +143,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
             <select
               value={branchCode}
               onChange={(e) => setBranchCode(e.target.value)}
-              className="border rounded px-3 py-2 min-w-[410px]"
+              className="border border-gray-300 px-3 py-1 rounded-md min-w-[410px]"
             >
               <option value="">All Branches</option>
               {branches.map((branch) => (
@@ -157,7 +157,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
           <select
             value={billStatus}
             onChange={(e) => setBillStatus(e.target.value)}
-            className="border rounded px-3 py-2 min-w-[155px]"
+            className="border border-gray-300 px-3 py-1 rounded-md min-w-[155px]"
           >
             <option value="">All Statuses</option>
             <option value="Completed">Completed</option>
@@ -167,7 +167,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
           <select
             value={billType}
             onChange={(e) => setBillType(e.target.value)}
-            className="border rounded px-3 py-2 min-w-[155px]"
+            className="border border-gray-300 px-3 py-1 rounded-md min-w-[155px]"
           >
             <option value="">All Types</option>
             <option value="CMC">CMC</option>
@@ -177,13 +177,13 @@ const ReportFilter = ({ onFilter, branches, user }) => {
           <button
             type="button"
             onClick={handleApplyFilter}
-            className="bg-orange-500 text-white px-6 py-3 rounded font-semibold shadow hover:bg-orange-600 transition-colors text-sm ml-auto"
+            className="bg-orange-500 text-white px-3 py-2 rounded font-semibold shadow hover:bg-orange-600 transition-colors text-sm ml-auto"
           >
             Apply Filter
           </button>
         </div>
         {/* แถวล่าง */}
-        <div className="flex flex-row flex-wrap gap-4 items-center">
+        <div className="flex flex-row flex-wrap gap-2 items-center">
           {/* Member Name */}
           <div className="relative">
             <input
@@ -191,7 +191,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
               value={memberName}
               onChange={(e) => setMemberName(e.target.value)}
               placeholder="Member Name"
-              className="border rounded px-6 py-2 min-w-[180px]"
+              className="border border-gray-300 px-7 py-1 rounded-md min-w-[180px]"
             />
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-500">
               <svg
@@ -217,7 +217,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
               value={recordBy}
               onChange={(e) => setRecordBy(e.target.value)}
               placeholder="Record By"
-              className="border rounded px-6 py-2 min-w-[180px]"
+              className="border border-gray-300 px-7 py-1 rounded-md min-w-[180px]"
             />
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-500">
               <svg
@@ -243,7 +243,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
               value={billNumber}
               onChange={(e) => setBillNumber(e.target.value)}
               placeholder="Bill Number"
-              className="border rounded px-6 py-2 min-w-[180px]"
+              className="border border-gray-300 px-7 py-1 rounded-md min-w-[180px]"
             />
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-500">
               <svg
@@ -266,7 +266,7 @@ const ReportFilter = ({ onFilter, branches, user }) => {
           <button
             type="button"
             onClick={handleClearTypes}
-            className="bg-gray-500 text-white px-6 py-3 rounded font-semibold shadow hover:bg-gray-600 transition-colors text-sm ml-auto"
+            className="bg-gray-500 text-white px-3 py-2 rounded font-semibold shadow hover:bg-gray-600 transition-colors text-sm ml-auto"
           >
             Clear Filter
           </button>
