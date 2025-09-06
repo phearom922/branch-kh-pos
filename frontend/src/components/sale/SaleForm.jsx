@@ -1,7 +1,6 @@
 import { useState, useEffect, useContext } from "react";
-import Notification from "../common/Notification";
 import { AuthContext } from "../../context/AuthContext";
-import { generateInvoicePDF } from "../../utils/pdfGenerator"; // ✅ import pdf generator
+import { generateInvoicePDF } from "../../utils/pdfGenerator";
 import { PiPrinterLight } from "react-icons/pi";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -21,7 +20,7 @@ const SaleForm = ({
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billData, setBillData] = useState(null);
-  
+  const [isLoading, setIsLoading] = useState(false); // เพิ่ม state สำหรับ loading
 
   useEffect(() => {
     if (success) {
@@ -52,6 +51,9 @@ const SaleForm = ({
       setError("All fields are required");
       return;
     }
+
+    setIsLoading(true); // เริ่มต้นสถานะ loading
+
     const bill = {
       memberId,
       memberName,
@@ -62,18 +64,25 @@ const SaleForm = ({
       createdAt: new Date(),
       recordBy: user.username || "N/A",
     };
-    const savedBill = await onSubmit(bill); // รอรับข้อมูลจาก backend
-    if (savedBill) {
-      toast.success("Sale created successfully");
-      setBillData(savedBill); // ใช้ข้อมูลจาก backend ที่มี billNumber จริง
-      setIsModalOpen(true);
-      generateInvoicePDF(billData, user);
-      setMemberId("");
-      setMemberName("");
-      setPurchaseType("");
-      setItems([]);
-      setSuccess("Sale created successfully");
-      
+
+    try {
+      const savedBill = await onSubmit(bill); // รอรับข้อมูลจาก backend
+      if (savedBill) {
+        toast.success("Sale created successfully");
+        setBillData(savedBill); // ใช้ข้อมูลจาก backend ที่มี billNumber จริง
+        setIsModalOpen(true);
+        // generateInvoicePDF(savedBill, user); // ใช้ savedBill แทน billData
+        setMemberId("");
+        setMemberName("");
+        setPurchaseType("");
+        setItems([]);
+        setSuccess("Sale created successfully");
+      }
+    } catch (error) {
+      console.error("Error saving order:", error);
+      toast.error("Failed to save order");
+    } finally {
+      setIsLoading(false); // สิ้นสุดสถานะ loading
     }
   };
 
@@ -87,8 +96,6 @@ const SaleForm = ({
       <h3 className="text-xl font-bold mb-6 text-gray-700 border-b border-gray-300 pb-3">
         Sale Details
       </h3>
-
-      {/* {success && <Notification message={success} type="success" />} */}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Member Information */}
@@ -297,17 +304,43 @@ const SaleForm = ({
           </div>
         )}
 
-        {/* Submit Button */}
+        {/* Submit Button with Loading State */}
         <button
           type="submit"
-          className={`w-full py-3 px-4 rounded-lg text-white font-medium transition duration-200 ${
-            items.length === 0
+          className={`w-full py-3 px-4 rounded-lg text-white font-medium transition duration-200 flex items-center justify-center ${
+            items.length === 0 || isLoading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              : "bg-gradient-to-r from-orange-500 cursor-pointer to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           }`}
-          disabled={items.length === 0}
+          disabled={items.length === 0 || isLoading}
         >
-          Confirm Order
+          {isLoading ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Saving...
+            </>
+          ) : (
+            "Save Order"
+          )}
         </button>
       </form>
 
@@ -321,14 +354,14 @@ const SaleForm = ({
             <div className="flex justify-end space-x-3">
               <button
                 onClick={viewPdfAndClose}
-                className="bg-orange-500 text-white px-4 py-2 flex justify-center items-center gap-2 rounded hover:bg-orange-600"
+                className="bg-orange-500 text-white cursor-pointer px-4 py-2 flex justify-center items-center gap-2 rounded hover:bg-orange-600"
               >
                 <PiPrinterLight className="text-xl" />
                 Print Invoice
               </button>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                className="bg-gray-300 text-gray-800 cursor-pointer px-4 py-2 rounded hover:bg-gray-400"
               >
                 Close
               </button>
