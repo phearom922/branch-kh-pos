@@ -93,7 +93,7 @@ const ReportFilter = ({ onFilter, branches = [], user }) => {
         className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
       >
         {/* Date range */}
-        <div >
+        <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Start Date
           </label>
@@ -165,10 +165,9 @@ const ReportFilter = ({ onFilter, branches = [], user }) => {
             onChange={(e) => setBillType(e.target.value)}
             className="w-full border border-gray-400 rounded px-2 py-2 text-sm"
           >
-            <option value="">All</option>
-            <option value="Retail">Retail</option>
-            <option value="Member">Member</option>
-            <option value="Wholesale">Wholesale</option>
+            <option value="">All Types</option>
+            <option value="CMC">CMC</option>
+            <option value="STK">STK</option>
           </select>
         </div>
 

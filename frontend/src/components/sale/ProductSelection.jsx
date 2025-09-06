@@ -489,7 +489,9 @@ const ProductSelection = ({ onAddProduct, isFormValid }) => {
             {loading ? (
               <tr>
                 <td colSpan="7" className="text-center p-8">
-                  <LoadingSpinner />
+                  <div className="p-8 flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                  </div>
                 </td>
               </tr>
             ) : products.length === 0 ? (

@@ -342,9 +342,9 @@ const Product = () => {
           </div>
         </div>
 
-        {error && <Notification message={error} type="error" />}
-        {success && <Notification message={success} type="success" />}
-        {loading && <LoadingSpinner />}
+        {/* {error && <Notification message={error} type="error" />}
+        {success && <Notification message={success} type="success" />} */}
+        {/* {!loading && <LoadingSpinner />} */}
 
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
@@ -428,72 +428,95 @@ const Product = () => {
                   <th className="p-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {(() => {
-                  // filter
-                  let filtered = products.filter((p) => {
-                    const codeMatch = p.productCode
-                      .toLowerCase()
-                      .includes(searchCode.toLowerCase());
-                    const nameMatch = p.productName
-                      .toLowerCase()
-                      .includes(searchName.toLowerCase());
-                    const groupMatch =
-                      !filterGroup || p.groupId?._id === filterGroup;
-                    const catMatch =
-                      !filterCategory || p.categoryId?._id === filterCategory;
-                    return codeMatch && nameMatch && groupMatch && catMatch;
-                  });
-                  // pagination
-                  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-                  const startIdx = (currentPage - 1) * itemsPerPage;
-                  const pageItems = filtered.slice(
-                    startIdx,
-                    startIdx + itemsPerPage
-                  );
-                  return pageItems.map((product) => (
-                    <tr key={product._id} className="hover:bg-gray-50">
-                      <td className="p-3 font-medium">{product.productCode}</td>
-                      <td className="p-3">{product.productName}</td>
-                      <td className="p-3">
-                        {product.groupId?.groupName || "-"}
-                      </td>
-                      <td className="p-3">
-                        {product.categoryId?.categoryName || "-"}
-                      </td>
-                      <td className="p-3">{product.pv}</td>
-                      <td className="p-3">{product.unitPrice.toFixed(2)}</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            product.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => openProductModal(product)}
-                            className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-200 transition duration-200"
+
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="text-center p-8">
+                    <div className="p-8 flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tbody>
+                  <tr>
+                    <td colSpan="8" className="text-center p-8 text-gray-500">
+                      No products found.
+                    </td>
+                  </tr>
+                </tbody>
+              ) : (
+                <tbody className="divide-y divide-gray-200">
+                  {(() => {
+                    // filter
+                    let filtered = products.filter((p) => {
+                      const codeMatch = p.productCode
+                        .toLowerCase()
+                        .includes(searchCode.toLowerCase());
+                      const nameMatch = p.productName
+                        .toLowerCase()
+                        .includes(searchName.toLowerCase());
+                      const groupMatch =
+                        !filterGroup || p.groupId?._id === filterGroup;
+                      const catMatch =
+                        !filterCategory || p.categoryId?._id === filterCategory;
+                      return codeMatch && nameMatch && groupMatch && catMatch;
+                    });
+                    // pagination
+                    const totalPages = Math.ceil(
+                      filtered.length / itemsPerPage
+                    );
+                    const startIdx = (currentPage - 1) * itemsPerPage;
+                    const pageItems = filtered.slice(
+                      startIdx,
+                      startIdx + itemsPerPage
+                    );
+                    return pageItems.map((product) => (
+                      <tr key={product._id} className="hover:bg-gray-50">
+                        <td className="p-3 font-medium">
+                          {product.productCode}
+                        </td>
+                        <td className="p-3">{product.productName}</td>
+                        <td className="p-3">
+                          {product.groupId?.groupName || "-"}
+                        </td>
+                        <td className="p-3">
+                          {product.categoryId?.categoryName || "-"}
+                        </td>
+                        <td className="p-3">{product.pv}</td>
+                        <td className="p-3">{product.unitPrice.toFixed(2)}</td>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              product.status === "Active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
                           >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product._id)}
-                            className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200 transition duration-200"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ));
-                })()}
-              </tbody>
+                            {product.status}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openProductModal(product)}
+                              className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-200 transition duration-200"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(product._id)}
+                              className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200 transition duration-200"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              )}
             </table>
             {/* Pagination UI */}
             <div className="flex justify-center items-center mt-4 gap-2">
