@@ -160,28 +160,21 @@ const Report = () => {
               branches={branches}
               user={user}
             />
-            {loading ? (
-              <div className="py-10">
-                <LoadingSpinner label="Loading bills data..." />
-              </div>
-            ) : (
-              <AllSaleBillReport
-                bills={bills}
-                onCancel={handleCancel}
-                isLoading={loading}
-              />
-            )}
+
+            <AllSaleBillReport
+              bills={bills}
+              onCancel={handleCancel}
+              isLoading={loading}
+            />
           </>
         ) : (
           <>
             <SummaryFilter onFilter={handleSummaryFilter} />
-            {loading ? (
-              <div className="py-10">
-                <LoadingSpinner label="Loading summary..." />
-              </div>
-            ) : (
-              <SaleSummaryReport bills={summary} totalPrice={totalPrice} />
-            )}
+            <SaleSummaryReport
+              bills={summary}
+              totalPrice={totalPrice}
+              isLoading={loading}
+            />
           </>
         )}
       </div>

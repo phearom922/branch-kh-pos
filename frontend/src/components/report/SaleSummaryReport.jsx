@@ -2,7 +2,7 @@ import { useState, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import * as XLSX from "xlsx";
 
-const SaleSummaryReport = ({ bills, recordByFilter }) => {
+const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
   const { user } = useContext(AuthContext);
   const [activeBranch, setActiveBranch] = useState(
     user?.role === "Cashier" ? user?.branchCode || "PNH" : "PNH"
@@ -94,27 +94,36 @@ const SaleSummaryReport = ({ bills, recordByFilter }) => {
             <th className="p-2 text-left">Branch Code</th>
           </tr>
         </thead>
-        <tbody>
-          {summaryData.map((row, index) => (
-            <tr
-              key={index}
-              className="border-b border-gray-200 font-semibold text-gray-600"
-            >
-              <td className="p-2">{row.billType}</td>
-              <td className="p-2">{row.billAmount}</td>
-              <td className="p-2">{row.totalPrice}</td>
-              <td className="p-2">{row.recordBy}</td>
-              <td className="p-2">{row.branchCode}</td>
+        {isLoading ? (
+          <td colSpan={13} className="px-4 py-8 text-center">
+            <div className="p-8 flex justify-center items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+            Loading data...
+          </td>
+        ) : (
+          <tbody>
+            {summaryData.map((row, index) => (
+              <tr
+                key={index}
+                className="border-b border-gray-200 font-semibold text-gray-600"
+              >
+                <td className="p-2">{row.billType}</td>
+                <td className="p-2">{row.billAmount}</td>
+                <td className="p-2">{row.totalPrice}</td>
+                <td className="p-2">{row.recordBy}</td>
+                <td className="p-2">{row.branchCode}</td>
+              </tr>
+            ))}
+            <tr className="font-bold bg-primary text-xl">
+              <td colSpan="2" className="p-2 text-right text-white">
+                Total Price ({activeBranch}):
+              </td>
+              <td className="p-2 text-white">{branchTotal.toFixed(2)}</td>
+              <td colSpan="2"></td>
             </tr>
-          ))}
-          <tr className="font-bold bg-primary text-xl">
-            <td colSpan="2" className="p-2 text-right text-white">
-              Total Price ({activeBranch}):
-            </td>
-            <td className="p-2 text-white">{branchTotal.toFixed(2)}</td>
-            <td colSpan="2"></td>
-          </tr>
-        </tbody>
+          </tbody>
+        )}
       </table>
     </div>
   );
