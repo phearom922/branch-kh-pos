@@ -4,12 +4,15 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Notification from "../common/Notification";
 import { AuthContext } from "../../context/AuthContext";
-import NotoSans from "../../fonts/NotoSans"; // นำเข้าไฟล์ฟอนต์
+import NotoSans from "../../fonts/NotoSans";
 
-const AllSaleBillReport = ({ bills, onCancel }) => {
+const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const { user } = useContext(AuthContext);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [cancelingId, setCancelingId] = useState(null);
+
+  const hasBills = Array.isArray(bills) && bills.length > 0;
 
   const handleViewPDF = (bill) => {
     const doc = new jsPDF({
@@ -17,28 +20,26 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
       unit: "mm",
       format: "a4",
     });
-
-    // เพิ่มฟอนต์ NotoSans
-    doc.addFileToVFS("NotoSans.ttf", NotoSans.font);
-    doc.addFont("NotoSans.ttf", "NotoSans", "normal");
+    // ฟอนต์ภาษาไทย
+    if (NotoSans?.font) {
+      doc.addFileToVFS("NotoSans.ttf", NotoSans.font);
+      doc.addFont("NotoSans.ttf", "NotoSans", "normal");
+    }
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const halfHeight = doc.internal.pageSize.getHeight() / 2;
 
-    const drawInvoice = (yStart, isCopy = false) => {
-      // ===== Title =====
+    const drawInvoice = (yStart) => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.text("INVOICE", pageWidth / 2, yStart + 10, { align: "center" });
 
-      // ===== Branch Info =====
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text(user.branchName || "Unknown Branch", 15, yStart + 20);
+      doc.text(user?.branchName || "Unknown Branch", 15, yStart + 20);
       doc.setFont("helvetica", "normal");
-      doc.text(user.address || "Unknown Address", 15, yStart + 26);
+      doc.text(user?.address || "Unknown Address", 15, yStart + 26);
 
-      // ===== Bill Info =====
       let y = yStart + 35;
       doc.setFontSize(10);
       doc.text(`Bill No: ${bill.billNumber}`, 15, y);
@@ -48,14 +49,13 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
         y
       );
       y += 5;
-      doc.setFont("NotoSans", "normal");
+      if (NotoSans?.font) doc.setFont("NotoSans", "normal");
       doc.text(`Member Name: ${bill.memberName || "-"}`, 15, y);
       doc.text(`Member ID: ${bill.memberId || "-"}`, 120, y);
       y += 5;
       doc.text(`Type: ${bill.purchaseType || "N/A"}`, 15, y);
       doc.text(`Recorded By: ${bill.recordBy || "N/A"}`, 120, y);
 
-      // Table
       const items = bill.items || [];
       const tableData = items.map((item, index) => [
         index + 1,
@@ -88,57 +88,31 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
         },
         margin: { left: 15, right: 15 },
         didDrawPage: (data) => {
-          // Summary
           const finalY = data.cursor.y + 8;
           doc.setFont("helvetica", "bold");
-
-          // Total Amount
           doc.text(
             `Total Amount: ${bill.totalPrice.toFixed(2)}`,
             pageWidth - 20,
             finalY,
             { align: "right" }
           );
-
-          // Total PV (เลื่อนลงมา 6 mm)
           doc.text(`Total PV: ${bill.totalPV}`, pageWidth - 20, finalY + 6, {
             align: "right",
           });
         },
-
-        // จำกัดตารางให้อยู่ครึ่งเดียว ถ้ามากเกินจะไปหน้าใหม่
         pageBreak: "auto",
         tableWidth: "auto",
         rowPageBreak: "auto",
       });
 
-      // // ===== Copy mark =====
-      // doc.setFontSize(8);
-      // doc.setFont("helvetica", "italic");
-      // doc.text(
-      //   isCopy ? "(Office Copy)" : "(Customer Copy)",
-      //   pageWidth - 20,
-      //   yStart + 10,
-      //   {
-      //     align: "right",
-      //   }
-      // );
-
-      // // ===== Divider line (กลางหน้า) =====
-      // if (!isCopy) {
-      //   doc.setDrawColor(200);
-      //   doc.line(15, halfHeight, pageWidth - 15, halfHeight);
-      // }
-
       doc.setDrawColor(200);
       doc.line(15, halfHeight, pageWidth - 15, halfHeight);
     };
 
-    // บนครึ่ง (ลูกค้า)
-    drawInvoice(0, false);
-    drawInvoice(halfHeight, true);
+    // สองสำเนาในหน้าเดียว
+    drawInvoice(0);
+    drawInvoice(halfHeight);
 
-    // ===== Export PDF =====
     const pdfBlob = doc.output("blob");
     const blobUrl = URL.createObjectURL(pdfBlob);
     window.open(blobUrl, "_blank");
@@ -146,7 +120,7 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
 
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
-      bills.map((bill) => ({
+      (bills || []).map((bill) => ({
         "Trans. Date": new Date(bill.createdAt).toLocaleString(),
         "Bill Number": bill.billNumber,
         "Member ID": bill.memberId,
@@ -170,8 +144,7 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
 
   const handleExportExcelDetail = () => {
     const detailRows = [];
-
-    bills.forEach((bill) => {
+    (bills || []).forEach((bill) => {
       (bill.items || []).forEach((item) => {
         detailRows.push({
           "Trans. Date": new Date(bill.createdAt).toLocaleString(),
@@ -194,7 +167,6 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
         });
       });
     });
-
     const ws = XLSX.utils.json_to_sheet(detailRows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sale Bill Details");
@@ -204,19 +176,28 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
   const handleCancel = async (id) => {
     if (window.confirm("Are you sure you want to cancel this bill?")) {
       try {
-        setLoading(true);
+        setCancelingId(id);
+        setLocalLoading(true);
         await onCancel(id);
-        setLoading(false);
+        setError("");
       } catch (err) {
-        setLoading(false);
         setError(err.response?.data?.message || "Failed to cancel bill");
+      } finally {
+        setLocalLoading(false);
+        setCancelingId(null);
       }
     }
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      {error && <Notification message={error} type="error" />}
+      {error && (
+        <Notification
+          message={error}
+          type="error"
+          onClose={() => setError("")}
+        />
+      )}
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
@@ -225,13 +206,15 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
         <div className="flex space-x-3">
           <button
             onClick={handleExportExcel}
-            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm font-medium"
+            disabled={!hasBills}
+            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium flex items-center"
           >
             Export to Excel
           </button>
           <button
             onClick={handleExportExcelDetail}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
+            disabled={!hasBills}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
           >
             Export to Excel Detail
           </button>
@@ -239,94 +222,74 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        {/* ตารางแสดงข้อมูล */}
-        <table className="w-full text-[11.5px] font-semibold rounded ring-1 ring-gray-200 overflow-hidden">
-          <thead>
-            <tr className="bg-gray-100 text-gray-700">
-              <th className="p-2 text-left font-medium text-[12px]">
-                Bill Number
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Trans. Date
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Member ID
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Member Name
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">Type</th>
-              <th className="p-2 text-left font-medium text-[12px]">PV</th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Total Sales
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Bill Status
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Branch Code
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Record By
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Cancel By
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">
-                Canceled Date
-              </th>
-              <th className="p-2 text-left font-medium text-[12px]">Actions</th>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {[
+                "Bill Number",
+                "Trans. Date",
+                "Member ID",
+                "Member Name",
+                "Type",
+                "PV",
+                "Total Sales",
+                "Bill Status",
+                "Branch Code",
+                "Record By",
+                "Cancel By",
+                "Canceled Date",
+                "Actions",
+              ].map((header) => (
+                <th
+                  key={header}
+                  className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500 tracking-wider"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
-            {loading ? (
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading ? (
               <tr>
-                <td colSpan="100%" className="text-center p-8">
-                  <div className="flex justify-center items-center">
-                    <svg
-                      className="animate-spin h-6 w-6 text-orange-500 mr-2"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8z"
-                      />
-                    </svg>
-                    <span className="text-orange-500 font-medium">
-                      Loading...
-                    </span>
-                  </div>
+                <td colSpan={13} className="px-4 py-8 text-center">
+                  Loading bills data...
+                </td>
+              </tr>
+            ) : !hasBills ? (
+              <tr>
+                <td colSpan={13} className="px-4 py-12 text-center">
+                  No bills found
                 </td>
               </tr>
             ) : (
               bills.map((bill, index) => (
                 <tr
-                  key={bill._id}
+                  key={bill._id || index}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                 >
-                  <td className="p-3 text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 font-medium">
+                    {bill.billNumber}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {new Date(bill.createdAt).toLocaleString()}
                   </td>
-                  <td className="p-2 text-gray-600">{bill.billNumber}</td>
-                  <td className="p-2 text-gray-600">{bill.memberId}</td>
-                  <td className="p-2 text-gray-600">{bill.memberName}</td>
-                  <td className="p-2 text-gray-600">{bill.purchaseType}</td>
-                  <td className="p-2 text-gray-600">{bill.totalPV}</td>
-                  <td className="p-2 text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.memberId || "-"}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.memberName || "-"}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.purchaseType}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.totalPV}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.totalPrice.toFixed(2)}
                   </td>
-                  <td className="p-2">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         bill.billStatus === "Canceled"
@@ -337,29 +300,38 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
                       {bill.billStatus}
                     </span>
                   </td>
-                  <td className="p-2 text-gray-600">{bill.branchCode}</td>
-                  <td className="p-2 text-gray-600">{bill.recordBy}</td>
-                  <td className="p-2 text-gray-600">{bill.cancelBy || "-"}</td>
-                  <td className="p-2 text-gray-600">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.branchCode}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.recordBy}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                    {bill.cancelBy || "-"}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                     {bill.canceledDate
                       ? new Date(bill.canceledDate).toLocaleString()
                       : "-"}
                   </td>
-                  <td className="p-2">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleViewPDF(bill)}
-                        className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-400 text-xs font-medium transition-colors"
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors"
                       >
                         View PDF
                       </button>
-                      {user.role === "Admin" &&
+                      {user?.role === "Admin" &&
                         bill.billStatus !== "Canceled" && (
                           <button
                             onClick={() => handleCancel(bill._id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs font-medium transition-colors"
+                            disabled={localLoading && cancelingId === bill._id}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
                           >
-                            Cancel
+                            {localLoading && cancelingId === bill._id
+                              ? "Canceling..."
+                              : "Cancel"}
                           </button>
                         )}
                     </div>
@@ -370,10 +342,6 @@ const AllSaleBillReport = ({ bills, onCancel }) => {
           </tbody>
         </table>
       </div>
-
-      {bills.length === 0 && (
-        <div className="text-center py-8 text-gray-500">No bills found</div>
-      )}
     </div>
   );
 };
