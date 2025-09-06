@@ -174,7 +174,7 @@ const Navbar = () => {
               </p>
               <button
                 onClick={handleLogout}
-                className="mt-2 w-full bg-primary text-white p-2 rounded-md hover:bg-primary-dark text-sm flex items-center justify-center"
+                className="mt-2 w-full bg-primary cursor-pointer text-white p-2 rounded-md hover:bg-primary-dark text-sm flex items-center justify-center"
               >
                 <FaSignOutAlt className="mr-1" />
                 Logout

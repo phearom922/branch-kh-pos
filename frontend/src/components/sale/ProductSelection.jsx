@@ -418,7 +418,7 @@ const ProductSelection = ({ onAddProduct, isFormValid }) => {
       )}
       {/* --- Filter Controls --- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div className="md:col-span-2 relative">
+        <div className="md:col-span-3 relative lg:col-span-3">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"

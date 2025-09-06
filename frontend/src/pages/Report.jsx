@@ -129,7 +129,7 @@ const Report = () => {
             onClick={() => setActiveTab("all-bills")}
             className={`px-4 py-2 mr-1 rounded-tl-lg ${
               activeTab === "all-bills"
-                ? "bg-primary text-white font-semibold"
+                ? "bg-primary text-white"
                 : "bg-gray-200 hover:border-orange-300 text-gray-700 hover:bg-orange-200 cursor-pointer transition-colors"
             }`}
           >
@@ -139,7 +139,7 @@ const Report = () => {
             onClick={() => setActiveTab("summary")}
             className={`px-4 py-2 rounded-tr-lg ${
               activeTab === "summary"
-                ? "bg-primary text-white font-semibold"
+                ? "bg-primary text-white "
                 : "bg-gray-200 hover:border-orange-300 text-gray-700 hover:bg-orange-200 cursor-pointer transition-colors"
             }`}
           >

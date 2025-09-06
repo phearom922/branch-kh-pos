@@ -4,13 +4,12 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import Notification from "../common/Notification";
 import { AuthContext } from "../../context/AuthContext";
-import NotoSans from "../../fonts/NotoSans";
+import NotoSans from "../../fonts/NotoSans"; // นำเข้าไฟล์ฟอนต์
 
-const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
+const AllSaleBillReport = ({ bills, onCancel }) => {
   const { user } = useContext(AuthContext);
   const [error, setError] = useState("");
-  const [localLoading, setLocalLoading] = useState(false);
-  const [cancelingId, setCancelingId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleViewPDF = (bill) => {
     const doc = new jsPDF({
@@ -106,10 +105,30 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
             align: "right",
           });
         },
+
+        // จำกัดตารางให้อยู่ครึ่งเดียว ถ้ามากเกินจะไปหน้าใหม่
         pageBreak: "auto",
         tableWidth: "auto",
         rowPageBreak: "auto",
       });
+
+      // // ===== Copy mark =====
+      // doc.setFontSize(8);
+      // doc.setFont("helvetica", "italic");
+      // doc.text(
+      //   isCopy ? "(Office Copy)" : "(Customer Copy)",
+      //   pageWidth - 20,
+      //   yStart + 10,
+      //   {
+      //     align: "right",
+      //   }
+      // );
+
+      // // ===== Divider line (กลางหน้า) =====
+      // if (!isCopy) {
+      //   doc.setDrawColor(200);
+      //   doc.line(15, halfHeight, pageWidth - 15, halfHeight);
+      // }
 
       doc.setDrawColor(200);
       doc.line(15, halfHeight, pageWidth - 15, halfHeight);
@@ -185,32 +204,19 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const handleCancel = async (id) => {
     if (window.confirm("Are you sure you want to cancel this bill?")) {
       try {
-        setCancelingId(id);
-        setLocalLoading(true);
+        setLoading(true);
         await onCancel(id);
-        setError("");
+        setLoading(false);
       } catch (err) {
+        setLoading(false);
         setError(err.response?.data?.message || "Failed to cancel bill");
-      } finally {
-        setLocalLoading(false);
-        setCancelingId(null);
       }
     }
   };
 
-  // ตรวจสอบสถานะการโหลดทั้งหมด
-  const isGlobalLoading = isLoading;
-  const hasBills = bills && bills.length > 0;
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      {error && (
-        <Notification
-          message={error}
-          type="error"
-          onClose={() => setError("")}
-        />
-      )}
+      {error && <Notification message={error} type="error" />}
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
@@ -219,41 +225,13 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
         <div className="flex space-x-3">
           <button
             onClick={handleExportExcel}
-            disabled={!hasBills}
-            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium flex items-center"
+            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm font-medium"
           >
-            {isGlobalLoading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Loading...
-              </>
-            ) : (
-              "Export to Excel"
-            )}
+            Export to Excel
           </button>
           <button
             onClick={handleExportExcelDetail}
-            disabled={!hasBills}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
           >
             Export to Excel Detail
           </button>
@@ -261,41 +239,52 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {[
-                "Bill Number",
-                "Trans. Date",
-                "Member ID",
-                "Member Name",
-                "Type",
-                "PV",
-                "Total Sales",
-                "Bill Status",
-                "Branch Code",
-                "Record By",
-                "Cancel By",
-                "Canceled Date",
-                "Actions",
-              ].map((header) => (
-                <th
-                  key={header}
-                  className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500 tracking-wider"
-                >
-                  {header}
-                </th>
-              ))}
+        {/* ตารางแสดงข้อมูล */}
+        <table className="w-full text-[11.5px] font-semibold rounded ring-1 ring-gray-200 overflow-hidden">
+          <thead>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="p-2 text-left font-medium text-[12px]">
+                Bill Number
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Trans. Date
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Member ID
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Member Name
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">Type</th>
+              <th className="p-2 text-left font-medium text-[12px]">PV</th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Total Sales
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Bill Status
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Branch Code
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Record By
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Cancel By
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">
+                Canceled Date
+              </th>
+              <th className="p-2 text-left font-medium text-[12px]">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isGlobalLoading ? (
-              // สถานะกำลังโหลดข้อมูล
+          <tbody>
+            {loading ? (
               <tr>
-                <td colSpan={13} className="px-4 py-8 text-center">
-                  <div className="flex flex-col items-center justify-center">
+                <td colSpan="100%" className="text-center p-8">
+                  <div className="flex justify-center items-center">
                     <svg
-                      className="animate-spin h-8 w-8 text-orange-500 mb-2"
+                      className="animate-spin h-6 w-6 text-orange-500 mr-2"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -307,78 +296,37 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                         r="10"
                         stroke="currentColor"
                         strokeWidth="4"
-                      ></circle>
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    <p className="text-gray-600 font-medium">
-                      Loading bills data...
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Please wait while we fetch your records
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            ) : !hasBills ? (
-              // สถานะไม่มีข้อมูล
-              <tr>
-                <td colSpan={13} className="px-4 py-12 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <svg
-                      className="h-12 w-12 text-gray-400 mb-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        d="M4 12a8 8 0 018-8v8z"
                       />
                     </svg>
-                    <p className="text-gray-500 text-lg font-medium">
-                      No bills found
-                    </p>
-                    <p className="text-gray-400 mt-1">
-                      There are no sale bills to display at the moment.
-                    </p>
+                    <span className="text-orange-500 font-medium">
+                      Loading...
+                    </span>
                   </div>
                 </td>
               </tr>
             ) : (
-              // แสดงข้อมูล bills
               bills.map((bill, index) => (
                 <tr
-                  key={bill._id || index}
+                  key={bill._id}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                 >
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 font-medium">
-                    {bill.billNumber}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                  <td className="p-3 text-gray-600">
                     {new Date(bill.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.memberId || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.memberName || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.purchaseType}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.totalPV}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                  <td className="p-2 text-gray-600">{bill.billNumber}</td>
+                  <td className="p-2 text-gray-600">{bill.memberId}</td>
+                  <td className="p-2 text-gray-600">{bill.memberName}</td>
+                  <td className="p-2 text-gray-600">{bill.purchaseType}</td>
+                  <td className="p-2 text-gray-600">{bill.totalPV}</td>
+                  <td className="p-2 text-gray-600">
                     {bill.totalPrice.toFixed(2)}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="p-2">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         bill.billStatus === "Canceled"
@@ -389,25 +337,19 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                       {bill.billStatus}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.branchCode}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.recordBy}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.cancelBy || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                  <td className="p-2 text-gray-600">{bill.branchCode}</td>
+                  <td className="p-2 text-gray-600">{bill.recordBy}</td>
+                  <td className="p-2 text-gray-600">{bill.cancelBy || "-"}</td>
+                  <td className="p-2 text-gray-600">
                     {bill.canceledDate
                       ? new Date(bill.canceledDate).toLocaleString()
                       : "-"}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
+                  <td className="p-2">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleViewPDF(bill)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors"
+                        className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-400 text-xs font-medium transition-colors"
                       >
                         View PDF
                       </button>
@@ -415,36 +357,9 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                         bill.billStatus !== "Canceled" && (
                           <button
                             onClick={() => handleCancel(bill._id)}
-                            disabled={localLoading && cancelingId === bill._id}
-                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors flex items-center"
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs font-medium transition-colors"
                           >
-                            {localLoading && cancelingId === bill._id ? (
-                              <>
-                                <svg
-                                  className="animate-spin -ml-1 mr-1 h-3 w-3 text-white"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                                </svg>
-                                Canceling...
-                              </>
-                            ) : (
-                              "Cancel"
-                            )}
+                            Cancel
                           </button>
                         )}
                     </div>
@@ -455,6 +370,10 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
           </tbody>
         </table>
       </div>
+
+      {bills.length === 0 && (
+        <div className="text-center py-8 text-gray-500">No bills found</div>
+      )}
     </div>
   );
 };
