@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useMemo, useEffect } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -11,21 +11,23 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const [error, setError] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
+  const [activeTab, setActiveTab] = useState("all"); // all | summary
+  // const [selectedBranch, setSelectedBranch] = useState(user?.branchCode || "");
+  const [selectedBranch, setSelectedBranch] = useState("");
 
   const hasBills = Array.isArray(bills) && bills.length > 0;
 
+  // -------------------- PDF --------------------
   const handleViewPDF = (bill) => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
-    // ฟอนต์ภาษาไทย
     if (NotoSans?.font) {
       doc.addFileToVFS("NotoSans.ttf", NotoSans.font);
       doc.addFont("NotoSans.ttf", "NotoSans", "normal");
     }
-
     const pageWidth = doc.internal.pageSize.getWidth();
     const halfHeight = doc.internal.pageSize.getHeight() / 2;
 
@@ -41,7 +43,6 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
       doc.text(user?.address || "Unknown Address", 15, yStart + 26);
 
       let y = yStart + 35;
-      doc.setFontSize(10);
       doc.text(`Bill No: ${bill.billNumber}`, 15, y);
       doc.text(
         `Invoice Date: ${new Date(bill.createdAt).toLocaleString()}`,
@@ -104,12 +105,10 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
         tableWidth: "auto",
         rowPageBreak: "auto",
       });
-
       doc.setDrawColor(200);
       doc.line(15, halfHeight, pageWidth - 15, halfHeight);
     };
 
-    // สองสำเนาในหน้าเดียว
     drawInvoice(0);
     drawInvoice(halfHeight);
 
@@ -118,6 +117,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
     window.open(blobUrl, "_blank");
   };
 
+  // -------------------- Excel --------------------
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
       (bills || []).map((bill) => ({
@@ -145,6 +145,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const handleExportExcelDetail = () => {
     const detailRows = [];
     (bills || []).forEach((bill) => {
+      if (bill.billStatus === "Canceled") return; // ไม่รวมบิลที่ถูกยกเลิก
       (bill.items || []).forEach((item) => {
         detailRows.push({
           "Trans. Date": new Date(bill.createdAt).toLocaleString(),
@@ -173,6 +174,45 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
     XLSX.writeFile(wb, "SaleBillDetails.xlsx");
   };
 
+  // -------------------- Summary Data --------------------
+  const summaryArray = useMemo(() => {
+    const filteredBills = (bills || []).filter(
+      (b) => b.billStatus !== "Canceled" && b.branchCode === selectedBranch
+    );
+    const summary = filteredBills.reduce((acc, bill) => {
+      (bill.items || []).forEach((item) => {
+        if (!acc[item.productCode])
+          acc[item.productCode] = {
+            productCode: item.productCode,
+            productName: item.productName,
+            totalQty: 0,
+            totalPrice: 0,
+          };
+        acc[item.productCode].totalQty += item.amount || 0;
+        acc[item.productCode].totalPrice +=
+          (item.unitPrice || 0) * (item.amount || 0);
+      });
+      return acc;
+    }, {});
+    return Object.values(summary);
+  }, [bills, selectedBranch]);
+
+  const handleExportSummaryDaily = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      summaryArray.map((row) => ({
+        "Product Code": row.productCode,
+        "Product Name": row.productName,
+        "Total Qty": row.totalQty,
+        "Total Price": row.totalPrice,
+        "Branch Code": selectedBranch,
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `SaleSummary_${selectedBranch}`);
+    XLSX.writeFile(wb, `SaleSummary_${selectedBranch}.xlsx`);
+  };
+
+  // -------------------- Cancel --------------------
   const handleCancel = async (id) => {
     if (window.confirm("Are you sure you want to cancel this bill?")) {
       try {
@@ -189,6 +229,25 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
     }
   };
 
+  // -------------------- Branch List --------------------
+  const branchList = useMemo(() => {
+    const list = Array.from(new Set(bills.map((b) => b.branchCode))).sort();
+    return list;
+  }, [bills]);
+
+  // กำหนดค่าเริ่มต้น branch
+  useEffect(() => {
+    if (branchList.length > 0) {
+      if (user?.role === "Admin") {
+        setSelectedBranch(user?.branchCode || branchList[0]); // Admin ใช้ branch ตัวเองหรือ default เป็นตัวแรก
+      } else {
+        // Cashier ใช้ branch ของตัวเองเท่านั้น
+        setSelectedBranch(user?.branchCode || branchList[0]);
+      }
+    }
+  }, [branchList, user]);
+
+  // -------------------- Render --------------------
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       {error && (
@@ -199,152 +258,304 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
         />
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">
-          All Sale Bills Report
-        </h2>
-        <div className="flex space-x-3">
-          <button
-            onClick={handleExportExcel}
-            disabled={!hasBills}
-            className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium flex items-center"
-          >
-            Export to Excel
-          </button>
-          <button
-            onClick={handleExportExcelDetail}
-            disabled={!hasBills}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
-          >
-            Export to Excel Detail
-          </button>
-        </div>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-300 mb-6">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "all"
+              ? "border-b-2 border-orange-500 text-orange-600"
+              : "text-gray-500 hover:bg-orange-50 rounded cursor-pointer"
+          }`}
+        >
+          All Bills
+        </button>
+        <button
+          onClick={() => setActiveTab("summary")}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "summary"
+              ? "border-b-2 border-orange-500 text-orange-600"
+              : "text-gray-500 hover:bg-orange-50 rounded cursor-pointer"
+          }`}
+        >
+          Sale Summary Daily
+        </button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {[
-                "Bill Number",
-                "Trans. Date",
-                "Member ID",
-                "Member Name",
-                "Type",
-                "PV",
-                "Total Sales",
-                "Bill Status",
-                "Branch Code",
-                "Record By",
-                "Cancel By",
-                "Canceled Date",
-                "Actions",
-              ].map((header) => (
-                <th
-                  key={header}
-                  className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500 tracking-wider"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
-              <tr>
-                <td colSpan={13} className="px-4 py-8 text-center">
-                  <div className="p-8 flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                  </div>
-                  Loading bills data...
-                </td>
-              </tr>
-            ) : !hasBills ? (
-              <tr>
-                <td colSpan={13} className="px-4 py-12 text-center">
-                  No bills found
-                </td>
-              </tr>
-            ) : (
-              bills.map((bill, index) => (
-                <tr
-                  key={bill._id || index}
-                  className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                >
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 font-medium">
-                    {bill.billNumber}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {new Date(bill.createdAt).toLocaleString()}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.memberId || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.memberName || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.purchaseType}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.totalPV}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.totalPrice.toFixed(2)}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        bill.billStatus === "Canceled"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
+      {/* Tab: All Bills */}
+      {activeTab === "all" && (
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-800">
+              All Sale Bills Report
+            </h2>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleExportExcel}
+                disabled={!hasBills}
+                className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+              >
+                Export to Excel
+              </button>
+              <button
+                onClick={handleExportExcelDetail}
+                disabled={!hasBills}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+              >
+                Export to Excel Detail
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[
+                    "Bill Number",
+                    "Trans. Date",
+                    "Member ID",
+                    "Member Name",
+                    "Type",
+                    "PV",
+                    "Total Sales",
+                    "Bill Status",
+                    "Branch Code",
+                    "Record By",
+                    "Cancel By",
+                    "Canceled Date",
+                    "Actions",
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500 tracking-wider"
                     >
-                      {bill.billStatus}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.branchCode}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.recordBy}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.cancelBy || "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    {bill.canceledDate
-                      ? new Date(bill.canceledDate).toLocaleString()
-                      : "-"}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleViewPDF(bill)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors"
-                      >
-                        View PDF
-                      </button>
-                      {user?.role === "Admin" &&
-                        bill.billStatus !== "Canceled" && (
-                          <button
-                            onClick={() => handleCancel(bill._id)}
-                            disabled={localLoading && cancelingId === bill._id}
-                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
-                          >
-                            {localLoading && cancelingId === bill._id
-                              ? "Canceling..."
-                              : "Cancel"}
-                          </button>
-                        )}
-                    </div>
-                  </td>
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={13} className="px-4 py-8 text-center">
+                      <div className="p-8 flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                      </div>
+                      <span className="text-gray-600">
+                        Loading bills data...
+                      </span>
+                    </td>
+                  </tr>
+                ) : !hasBills ? (
+                  <tr>
+                    <td colSpan={13} className="px-4 py-12 text-center">
+                      No bills found
+                    </td>
+                  </tr>
+                ) : (
+                  bills.map((bill, index) => (
+                    <tr
+                      key={bill._id || index}
+                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    >
+                      <td className="px-3 py-2 text-xs font-medium text-gray-900">
+                        {bill.billNumber}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {new Date(bill.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.memberId || "-"}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.memberName || "-"}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.purchaseType}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.totalPV}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.totalPrice.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            bill.billStatus === "Canceled"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {bill.billStatus}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.branchCode}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.recordBy}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.cancelBy || "-"}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {bill.canceledDate
+                          ? new Date(bill.canceledDate).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-xs font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewPDF(bill)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium"
+                          >
+                            View PDF
+                          </button>
+                          {user?.role === "Admin" &&
+                            bill.billStatus !== "Canceled" && (
+                              <button
+                                onClick={() => handleCancel(bill._id)}
+                                disabled={
+                                  localLoading && cancelingId === bill._id
+                                }
+                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                              >
+                                {localLoading && cancelingId === bill._id
+                                  ? "Canceling..."
+                                  : "Cancel"}
+                              </button>
+                            )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Tab: Sale Summary Daily */}
+      {activeTab === "summary" && (
+        <>
+          <div className="flex justify-between items-center mb-4 gap-2">
+            <div className="flex gap-2">
+              {user?.role === "Admin" ? (
+                <>
+                  <label className="block font-medium text-gray-500">
+                    Branch :
+                  </label>
+                  <select
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    className="border px-3 py-1 w-36 rounded border-gray-300 cursor-pointer text-gray-600 text-sm"
+                  >
+                    {branchList.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <input
+                  type="text"
+                  value={selectedBranch}
+                  readOnly
+                  className="border px-3 py-1 rounded text-sm bg-gray-100"
+                />
+              )}
+            </div>
+
+            <button
+              onClick={handleExportSummaryDaily}
+              disabled={!hasBills}
+              className="bg-blue-600 text-white px-4 py-2 cursor-pointer rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+            >
+              Export Sale Daily
+            </button>
+          </div>
+
+          {(() => {
+            const grouped = {};
+            summaryArray.forEach((row) => {
+              if (!grouped[row.branchCode]) grouped[row.branchCode] = [];
+              grouped[row.branchCode].push(row);
+            });
+
+            return Object.entries(grouped).map(([branchCode, rows]) => (
+              <div key={branchCode} className="mb-8">
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {[
+                          "Product Code",
+                          "Product Name",
+                          "Total Qty",
+                          "Total Price",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-2 py-2 text-left text-xs bg-orange-50 font-medium text-gray-500"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {localLoading ? (
+                        <tr>
+                          <td colSpan={13} className="px-4 py-8 text-center">
+                            <div className="p-8 flex justify-center items-center">
+                              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                            </div>
+                            <span className="text-gray-600">
+                              Loading bills data...
+                            </span>
+                          </td>
+                        </tr>
+                      ) : summaryArray.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center">
+                            No data found for this branch
+                          </td>
+                        </tr>
+                      ) : (
+                        summaryArray.map((row, idx) => (
+                          <tr
+                            key={idx}
+                            className={
+                              idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                            }
+                          >
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {row.productCode}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {row.productName}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {row.totalQty}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-gray-600">
+                              {row.totalPrice.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ));
+          })()}
+        </>
+      )}
     </div>
   );
 };

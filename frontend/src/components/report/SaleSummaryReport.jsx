@@ -69,7 +69,7 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
             className={`px-4 py-2 font-medium ${
               activeBranch === branch
                 ? "text-orange-600 border-b-2 border-orange-600"
-                : "text-gray-600 hover:text-gray-800"
+                : "text-gray-600 hover:text-gray-800 cursor-pointer"
             }`}
           >
             {branch}
@@ -79,7 +79,7 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
       {/* Export button */}
       <button
         onClick={handleExportExcel}
-        className="mb-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark text-sm"
+        className="mb-4 bg-primary text-white px-4 py-2 cursor-pointer rounded hover:bg-primary-dark text-sm"
       >
         Export {activeBranch} to Excel
       </button>
@@ -110,7 +110,7 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
               >
                 <td className="p-2">{row.billType}</td>
                 <td className="p-2">{row.billAmount}</td>
-                <td className="p-2">{row.totalPrice}</td>
+                <td className="p-2">{row.totalPrice.toFixed(2)}</td>
                 <td className="p-2">{row.recordBy}</td>
                 <td className="p-2">{row.branchCode}</td>
               </tr>
@@ -119,7 +119,7 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
               <td colSpan="2" className="p-2 text-right text-white">
                 Total Price ({activeBranch}):
               </td>
-              <td className="p-2 text-white">{branchTotal.toFixed(2)}</td>
+              <td className="p-2 text-white">{branchTotal.toFixed(2)} USD</td>
               <td colSpan="2"></td>
             </tr>
           </tbody>

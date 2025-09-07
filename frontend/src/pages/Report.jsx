@@ -135,7 +135,7 @@ const Report = () => {
             onClick={() => setActiveTab("all-bills")}
             className={`px-4 py-2 rounded font-medium ${
               activeTab === "all-bills"
-                ? "bg-orange-600 text-white"
+                ? "bg-primary text-white"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-orange-100 cursor-pointer"
             }`}
           >
@@ -145,7 +145,7 @@ const Report = () => {
             onClick={() => setActiveTab("summary")}
             className={`px-4 py-2 rounded font-medium ${
               activeTab === "summary"
-                ? "bg-orange-600 text-white"
+                ? "bg-primary text-white"
                 : "bg-white text-gray-700 border border-gray-200 hover:bg-orange-100 cursor-pointer"
             }`}
           >

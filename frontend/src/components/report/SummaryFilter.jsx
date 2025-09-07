@@ -65,6 +65,7 @@ const SummaryFilter = ({ onFilter }) => {
         <div>
           <label className="block text-gray-700 text-sm">Record By</label>
           <input
+            placeholder="Username Staff"
             type="text"
             value={recordBy}
             onChange={(e) => setRecordBy(e.target.value)}

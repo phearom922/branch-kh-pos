@@ -150,7 +150,7 @@ const ReportFilter = ({ onFilter, branches = [], user }) => {
             className="w-full border border-gray-400 rounded px-2 py-2 text-sm"
           >
             <option value="">All</option>
-            <option value="Success">Success</option>
+            <option value="Completed">Completed</option>
             <option value="Canceled">Canceled</option>
           </select>
         </div>
@@ -206,7 +206,7 @@ const ReportFilter = ({ onFilter, branches = [], user }) => {
             value={recordBy}
             onChange={(e) => setRecordBy(e.target.value)}
             className="w-full border border-gray-400 rounded px-2 py-2 text-sm"
-            placeholder="Username"
+            placeholder="Username Staff"
           />
         </div>
 
