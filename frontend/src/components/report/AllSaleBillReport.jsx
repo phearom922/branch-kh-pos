@@ -12,10 +12,58 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const [localLoading, setLocalLoading] = useState(false);
   const [cancelingId, setCancelingId] = useState(null);
   const [activeTab, setActiveTab] = useState("all"); // all | summary
-  // const [selectedBranch, setSelectedBranch] = useState(user?.branchCode || "");
   const [selectedBranch, setSelectedBranch] = useState("");
+  // State สำหรับ pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25; // จำนวนรายการต่อหน้า
 
   const hasBills = Array.isArray(bills) && bills.length > 0;
+
+  // คำนวณ pagination
+  const totalPages = Math.ceil(bills.length / itemsPerPage);
+  const currentBills = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return bills.slice(startIndex, startIndex + itemsPerPage);
+  }, [bills, currentPage, itemsPerPage]);
+
+  // ฟังก์ชันเปลี่ยนหน้า
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // สร้าง array ของเลขหน้าเพื่อแสดง
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5; // จำนวนหน้าที่แสดง
+
+    if (totalPages <= maxVisiblePages) {
+      // ถ้ามีหน้าน้อยกว่า maxVisiblePages ให้แสดงทั้งหมด
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // ถ้ามีหน้ามากกว่า ให้แสดงบางส่วน
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = endPage - maxVisiblePages + 1;
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
+  };
+
+  // รีเซ็ตหน้าเมื่อ bills เปลี่ยน
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bills]);
 
   // -------------------- PDF --------------------
   const handleViewPDF = (bill) => {
@@ -354,7 +402,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                     </td>
                   </tr>
                 ) : (
-                  bills.map((bill, index) => (
+                  currentBills.map((bill, index) => (
                     <tr
                       key={bill._id || index}
                       className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -435,6 +483,45 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {hasBills && totalPages > 1 && (
+            <div className="flex justify-center items-center mt-6 space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-300 text-sm cursor-pointer hover:text-orange-500 font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                &lt;
+              </button>
+
+              {getPageNumbers().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1 rounded text-sm font-medium ${
+                    currentPage === page
+                      ? "bg-orange-500 text-white"
+                      : "border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer hover:text-orange-500"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-300 text-sm font-medium cursor-pointer hover:text-orange-500 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                &gt;
+              </button>
+
+              <span className="text-sm text-gray-600 ml-2">
+                Page {currentPage} of {totalPages} ({bills.length} records)
+              </span>
+            </div>
+          )}
         </>
       )}
 
