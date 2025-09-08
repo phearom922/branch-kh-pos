@@ -630,7 +630,10 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                               {row.totalQty}
                             </td>
                             <td className="px-3 py-2 text-xs text-gray-600">
-                              {row.totalPrice.toFixed(2)}
+                              {row.totalPrice.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
                             </td>
                           </tr>
                         ))

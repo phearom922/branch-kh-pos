@@ -110,7 +110,12 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
               >
                 <td className="p-2">{row.billType}</td>
                 <td className="p-2">{row.billAmount}</td>
-                <td className="p-2">{row.totalPrice.toFixed(2)}</td>
+                <td className="p-2">
+                  {row.totalPrice.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
                 <td className="p-2">{row.recordBy}</td>
                 <td className="p-2">{row.branchCode}</td>
               </tr>
@@ -119,7 +124,13 @@ const SaleSummaryReport = ({ bills, recordByFilter, isLoading = false }) => {
               <td colSpan="2" className="p-2 text-right text-white">
                 Total Price ({activeBranch}):
               </td>
-              <td className="p-2 text-white">{branchTotal.toFixed(2)} USD</td>
+              <td className="p-2 text-white">
+                {branchTotal.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                USD
+              </td>
               <td colSpan="2"></td>
             </tr>
           </tbody>
