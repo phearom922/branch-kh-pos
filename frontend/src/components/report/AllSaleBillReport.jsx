@@ -5,6 +5,108 @@ import * as XLSX from "xlsx";
 import Notification from "../common/Notification";
 import { AuthContext } from "../../context/AuthContext";
 import NotoSans from "../../fonts/NotoSans";
+import {
+  ReceiptText,
+  User,
+  CreditCard,
+  TrendingUp,
+  Receipt,
+  Eye,
+} from "lucide-react";
+
+// Cancel Confirmation Modal Component
+const CancelConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  billData,
+  isLoading,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div className="p-6">
+          <h2 className="text-xl flex items-center gap-2 font-semibold text-gray-800 mb-4">
+            <ReceiptText />
+            Bill Information
+          </h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Please review the bill details below before confirm.
+          </p>
+
+          <div className="space-y-3 mb-6 bg-blue-50 p-4 rounded-md ring-1 ring-gray-200">
+            <div className="flex justify-between font-semibold border-b pt-2 pb-4 border-gray-200">
+              <span className="font-medium flex gap-2 items-center text-gray-600">
+                <ReceiptText size={20} />
+                Bill Number
+              </span>
+              <p className="text-gray-900">{billData?.billNumber || "-"}</p>
+            </div>
+            <div className="flex justify-between font-semibold ">
+              <span className="font-medium flex gap-2 items-center text-gray-600">
+                <User size={16} />
+                Member ID
+              </span>
+              <p className="text-gray-900">{billData?.memberId || "-"}</p>
+            </div>
+            <div className="flex justify-between font-semibold ">
+              <span className="font-medium flex gap-2 items-center text-gray-600">
+                <User size={16} />
+                Member Name
+              </span>
+              <p className="text-gray-900">{billData?.memberName || "-"}</p>
+            </div>
+            <div className="flex justify-between font-semibold border-b pt-2 pb-4 border-gray-200">
+              <span className="font-medium flex gap-2 items-center text-gray-600">
+                <CreditCard size={16} />
+                Type
+              </span>
+              <p className="text-gray-900">{billData?.purchaseType || "-"}</p>
+            </div>
+
+            <div className="flex justify-between text-xl font-semibold">
+              <span className="font-medium flex gap-2 items-center text-gray-800">
+                <TrendingUp size={18} color="green" />
+                PV
+              </span>
+              <p className="text-green-600 font-bold">
+                {billData?.totalPV || "0"}
+              </p>
+            </div>
+            <div className="flex justify-between text-xl font-semibold ">
+              <span className="font-medium flex gap-2 items-center text-gray-800">
+                <Receipt size={18} color="green" />
+                Total Sales
+              </span>
+              <p className="text-gray-900 font-bold">
+                {billData?.totalPrice?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 cursor-pointer rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={isLoading}
+            >
+              Close
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 bg-red-600 text-white cursor-pointer rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
+            >
+              {isLoading ? "Canceling..." : "Confirm"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   const { user } = useContext(AuthContext);
@@ -16,6 +118,10 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   // State สำหรับ pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25; // จำนวนรายการต่อหน้า
+
+  // State for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
 
   const hasBills = Array.isArray(bills) && bills.length > 0;
 
@@ -261,19 +367,30 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   };
 
   // -------------------- Cancel --------------------
-  const handleCancel = async (id) => {
-    if (window.confirm("Are you sure you want to cancel this bill?")) {
-      try {
-        setCancelingId(id);
-        setLocalLoading(true);
-        await onCancel(id);
-        setError("");
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to cancel bill");
-      } finally {
-        setLocalLoading(false);
-        setCancelingId(null);
-      }
+  const openCancelModal = (bill) => {
+    setSelectedBill(bill);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedBill(null);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedBill) return;
+
+    try {
+      setCancelingId(selectedBill._id);
+      setLocalLoading(true);
+      await onCancel(selectedBill._id);
+      setError("");
+      closeModal();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to cancel bill");
+    } finally {
+      setLocalLoading(false);
+      setCancelingId(null);
     }
   };
 
@@ -305,6 +422,15 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
           onClose={() => setError("")}
         />
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <CancelConfirmationModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onConfirm={handleConfirmCancel}
+        billData={selectedBill}
+        isLoading={localLoading && cancelingId === selectedBill?._id}
+      />
 
       {/* Tabs */}
       <div className="flex border-b border-gray-300 mb-6">
@@ -383,7 +509,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 ">
                 {isLoading ? (
                   <tr>
                     <td colSpan={13} className="px-4 py-8 text-center">
@@ -405,7 +531,11 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                   currentBills.map((bill, index) => (
                     <tr
                       key={bill._id || index}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      className={
+                        index % 2 === 0
+                          ? "bg-white hover:bg-orange-50"
+                          : "bg-gray-50 hover:bg-orange-50"
+                      }
                     >
                       <td className="px-3 py-2 text-xs font-medium text-gray-900">
                         {bill.billNumber}
@@ -457,18 +587,19 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleViewPDF(bill)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium"
+                            className="bg-blue-500 text-white px-3 items-center gap-1 flex py-1 cursor-pointer rounded hover:bg-blue-600 text-xs font-medium"
                           >
-                            View PDF
+                            <Eye size={14} />
+                            PDF
                           </button>
                           {user?.role === "Admin" &&
                             bill.billStatus !== "Canceled" && (
                               <button
-                                onClick={() => handleCancel(bill._id)}
+                                onClick={() => openCancelModal(bill)}
                                 disabled={
                                   localLoading && cancelingId === bill._id
                                 }
-                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
+                                className="bg-red-600 text-white px-3 py-1 cursor-pointer rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
                               >
                                 {localLoading && cancelingId === bill._id
                                   ? "Canceling..."
