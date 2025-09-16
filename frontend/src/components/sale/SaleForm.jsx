@@ -108,7 +108,7 @@ const SaleForm = ({
               type="text"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              className="w-full p-2 border border-gray-300 text-primary font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200"
+              className="w-full p-2 border border-gray-300 text-primary font-semibold rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition duration-200"
               required
               placeholder="Enter member ID"
             />
@@ -121,7 +121,7 @@ const SaleForm = ({
               type="text"
               value={memberName}
               onChange={(e) => setMemberName(e.target.value)}
-              className="w-full p-2 border border-gray-300 text-primary font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition duration-200"
+              className="w-full p-2 border border-gray-300 text-primary font-semibold rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent transition duration-200"
               required
               placeholder="Enter member name"
             />
@@ -239,7 +239,7 @@ const SaleForm = ({
                           onChange={(e) =>
                             handleAmountChange(index, e.target.value)
                           }
-                          className="w-16 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center transition duration-200"
+                          className="w-16 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-transparent text-center transition duration-200"
                         />
                       </td>
                       <td className="px-3 py-1 font-medium text-green-700">
@@ -254,7 +254,7 @@ const SaleForm = ({
                         <button
                           type="button"
                           onClick={() => handleDeleteItem(index)}
-                          className="bg-red-100 text-red-700 px-2 py-2 rounded-md hover:bg-red-200 transition duration-200 flex items-center"
+                          className="bg-red-100 text-red-700 px-2 py-2 cursor-pointer rounded-md hover:bg-red-200 transition duration-200 flex items-center"
                         >
                           <svg
                             className="w-4 h-4 "

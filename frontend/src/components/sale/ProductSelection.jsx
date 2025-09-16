@@ -187,7 +187,7 @@ const Pagination = memo(
             ${
               isCurrent
                 ? "bg-primary text-white font-bold shadow-md"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                : "bg-white text-gray-700 hover:bg-gray-100 border cursor-pointer border-gray-200"
             }
             ${
               isDisabled
@@ -204,7 +204,7 @@ const Pagination = memo(
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1 || isDisabled}
-          className="flex items-center justify-center w-6 h-6 bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-6 h-6 bg-white text-gray-700 cursor-pointer hover:bg-gray-100 border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Previous Page"
         >
           <ChevronLeftIcon className="w-5 h-5" />
@@ -213,7 +213,7 @@ const Pagination = memo(
           page === "..." ? (
             <span
               key={`ellipsis-${index}`}
-              className="flex items-center justify-center w-9 h-9 text-gray-500"
+              className="flex items-center justify-center w-9 h-9  text-gray-500"
             >
               ...
             </span>
@@ -226,7 +226,7 @@ const Pagination = memo(
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages || isDisabled}
-          className="flex items-center justify-center w-6 h-6 bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center w-6 h-6 bg-white text-gray-700 cursor-pointer hover:bg-gray-100 border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Next Page"
         >
           <ChevronRightIcon className="w-5 h-5" />

@@ -8,6 +8,7 @@ import SaleSummaryReport from "../components/report/SaleSummaryReport";
 import Notification from "../components/common/Notification";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Report = () => {
@@ -127,8 +128,8 @@ const Report = () => {
       <div className="max-w-10/12 mx-auto">
         <h2 className="text-2xl font-bold mb-6">Reports</h2>
 
-        {error && <Notification message={error} type="error" />}
-        {success && <Notification message={success} type="success" />}
+        {/* {error && <Notification message={error} type="error" />}
+        {success && <Notification message={success} type="success" />} */}
 
         <div className="flex space-x-2 mb-4">
           <button

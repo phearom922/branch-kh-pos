@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+
 const SummaryFilter = ({ onFilter }) => {
   const today = new Date().toISOString().split("T")[0]; // วันที่ปัจจุบันใน YYYY-MM-DD
   const [startDate, setStartDate] = useState(today);
@@ -17,7 +18,7 @@ const SummaryFilter = ({ onFilter }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("SummaryFilter: Apply filter:", {
+    console.log("SummaryFilter: Search:", {
       startDate,
       endDate,
       recordBy,
@@ -29,7 +30,7 @@ const SummaryFilter = ({ onFilter }) => {
     setStartDate(today);
     setEndDate(today);
     setRecordBy("");
-    console.log("SummaryFilter: Clear filter:", {
+    console.log("SummaryFilter: Clear:", {
       startDate: today,
       endDate: today,
       recordBy: "",
@@ -76,16 +77,16 @@ const SummaryFilter = ({ onFilter }) => {
         <div className="flex gap-4 mt-4">
           <button
             type="submit"
-            className="w-full bg-primary text-white p-2 rounded hover:bg-primary-dark text-sm"
+            className="w-full bg-primary text-white p-2 font-semibold cursor-pointer rounded hover:bg-primary-dark"
           >
-            Apply Filter
+            Search
           </button>
           <button
             type="button"
             onClick={handleClear}
-            className="w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600 text-sm"
+            className="w-full bg-gray-500 text-white p-2 font-semibold rounded cursor-pointer hover:bg-gray-600"
           >
-            Clear Filter
+            Clear
           </button>
         </div>
       </div>

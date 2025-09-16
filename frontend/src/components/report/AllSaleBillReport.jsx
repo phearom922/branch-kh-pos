@@ -13,7 +13,7 @@ import {
   Receipt,
   Eye,
 } from "lucide-react";
-
+import { ToastContainer, toast } from "react-toastify";
 // Cancel Confirmation Modal Component
 const CancelConfirmationModal = ({
   isOpen,
@@ -391,6 +391,7 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
     } finally {
       setLocalLoading(false);
       setCancelingId(null);
+      toast.success("Bill canceled successfully");
     }
   };
 
@@ -415,13 +416,13 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
   // -------------------- Render --------------------
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      {error && (
+      {/* {error && (
         <Notification
           message={error}
           type="error"
           onClose={() => setError("")}
         />
-      )}
+      )} */}
 
       {/* Cancel Confirmation Modal */}
       <CancelConfirmationModal
@@ -777,6 +778,17 @@ const AllSaleBillReport = ({ bills, onCancel, isLoading = false }) => {
           })()}
         </>
       )}
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={true}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

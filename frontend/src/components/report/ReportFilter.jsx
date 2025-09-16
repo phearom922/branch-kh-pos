@@ -214,16 +214,16 @@ const ReportFilter = ({ onFilter, branches = [], user }) => {
         <div className="md:col-span-4 flex gap-2 justify-end">
           <button
             type="submit"
-            className="bg-orange-600 text-white px-4 py-2 rounded shadow hover:bg-orange-700 text-sm"
+            className="bg-orange-500 text-white font-semibold px-4 py-2 cursor-pointer rounded shadow hover:bg-orange-600"
           >
-            Apply Filter
+            Search
           </button>
           <button
             type="button"
             onClick={clearFilter}
-            className="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 text-sm"
+            className="bg-gray-500 text-white px-4 font-semibold py-2 cursor-pointer rounded shadow hover:bg-gray-600"
           >
-            Clear Filter (Today)
+            Clear
           </button>
         </div>
       </form>
